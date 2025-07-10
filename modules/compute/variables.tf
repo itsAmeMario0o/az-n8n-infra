@@ -64,8 +64,8 @@ variable "ssh_public_key" {
   type        = string
   
   validation {
-    condition     = can(regex("^ssh-rsa AAAA[0-9A-Za-z+/]+[=]{0,3}( .*)?$", var.ssh_public_key))
-    error_message = "SSH public key must be a valid RSA public key."
+    condition     = can(regex("^ssh-(rsa|ed25519|ecdsa-sha2-nistp256|ecdsa-sha2-nistp384|ecdsa-sha2-nistp521) [A-Za-z0-9+/]+(=*)( .*)?$", var.ssh_public_key))
+    error_message = "SSH public key must be a valid SSH public key in OpenSSH format."
   }
 }
 
