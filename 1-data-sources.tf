@@ -35,6 +35,6 @@ data "azurerm_client_config" "current" {}
 # Get information about the specified Azure region to validate location
 # and retrieve region-specific configuration options.
 
-data "azurerm_locations" "available" {
+data "azurerm_location" "available" {
   location = var.location
 }

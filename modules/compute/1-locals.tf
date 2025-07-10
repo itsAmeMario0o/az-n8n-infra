@@ -54,11 +54,10 @@ locals {
   # ---------------------------------------------------------------------------
   # VM Configuration Validation
   # ---------------------------------------------------------------------------
-  # Validate VM configuration parameters
+  # VM size validation is handled through variable validation in variables.tf
+  # rather than using a data source since azurerm_virtual_machine_sizes doesn't exist
   
-  vm_size_valid = contains([
-    for size in data.azurerm_virtual_machine_sizes.available.sizes : size.name
-  ], var.vm_size)
+  vm_size_valid = true  # Validation moved to variables.tf
   
   # ---------------------------------------------------------------------------
   # Public IP Configuration

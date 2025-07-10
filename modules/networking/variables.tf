@@ -58,13 +58,3 @@ variable "common_tags" {
   type        = map(string)
   default     = {}
 }
-
-variable "public_ip_id" {
-  description = "ID of the public IP address to associate with the network interface"
-  type        = string
-  
-  validation {
-    condition     = length(var.public_ip_id) > 0
-    error_message = "Public IP ID cannot be empty."
-  }
-}

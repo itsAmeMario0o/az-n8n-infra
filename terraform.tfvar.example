@@ -1,0 +1,15 @@
+# Project Configuration
+project_name = "n8n"
+environment  = "dev"
+location     = "East US"
+
+# VM Configuration
+vm_size                     = "Standard_B2s"
+admin_username              = "azureuser"
+os_disk_type                = "Standard_LRS"
+os_disk_size_gb             = 64
+
+# Security Configuration
+enable_dynamic_ip_security = true
+allowed_ssh_cidr_blocks = ["0.0.0.0/0"]
+allowed_web_cidr_blocks = ["0.0.0.0/0"]

@@ -3,6 +3,7 @@
 # =============================================================================
 # This file organizes and exposes outputs from all modules in a structured
 # format for easy consumption by users and other Terraform configurations.
+# Outputs are grouped by functional area for better organization.
 
 # -----------------------------------------------------------------------------
 # Deployment Information
@@ -22,6 +23,9 @@ output "deployment_info" {
     dynamic_ip_enabled = var.enable_dynamic_ip_security
     discovered_public_ip = var.enable_dynamic_ip_security ? chomp(data.http.my_public_ip[0].response_body) : "Disabled"
     
+    # Creation metadata
+    created_by      = data.azurerm_client_config.current.object_id
+    subscription_id = data.azurerm_client_config.current.subscription_id
   }
 }
 
@@ -138,6 +142,29 @@ output "ssh_keys" {
 }
 
 # -----------------------------------------------------------------------------
+# N8N Application Information
+# -----------------------------------------------------------------------------
+# N8N-specific configuration and access information.
+
+output "n8n_application" {
+  description = "N8N application information and access details"
+  value = {
+    repository_path = local.n8n_config.install_directory
+    installer_script = local.n8n_config.installer_script
+    
+    # Web interface URLs (available after manual installation)
+    web_urls = {
+      http  = "http://${module.compute.public_ip_address}"
+      https = "https://${module.compute.public_ip_address}"
+      direct = "http://${module.compute.public_ip_address}:5678"
+    }
+    
+    # Installation instructions
+    installation_command = "cd ${local.n8n_config.install_directory} && sudo bash ${local.n8n_config.installer_script}"
+  }
+}
+
+# -----------------------------------------------------------------------------
 # Connection Commands
 # -----------------------------------------------------------------------------
 # Ready-to-use commands for connecting to and managing the deployment.
@@ -145,12 +172,10 @@ output "ssh_keys" {
 output "connection_commands" {
   description = "Ready-to-use connection and management commands"
   value = {
-    # SSH connection command with proper key reference
     ssh_connect = "ssh -i ${module.ssh_keys.private_key_path} ${var.admin_username}@${module.compute.public_ip_address}"
-    
-    # SCP command for file transfers
     scp_upload = "scp -i ${module.ssh_keys.private_key_path} <local_file> ${var.admin_username}@${module.compute.public_ip_address}:~/"
-    
+    install_n8n = "cd ${local.n8n_config.install_directory} && sudo bash ${local.n8n_config.installer_script}"
+    view_logs = "sudo journalctl -u n8n -f"
   }
 }
 
@@ -162,19 +187,21 @@ output "connection_commands" {
 output "quick_start" {
   description = "Quick start summary and next steps"
   value = {
-    summary = "Infrastructure deployed successfully. SSH to the VM to complete setup."
+    summary = "N8N infrastructure deployed successfully. SSH to the VM and run the N8N installer to complete setup."
     
     next_steps = [
-      "1. SSH to VM: ssh -i ${module.ssh_keys.private_key_path} ${var.admin_username}@${module.compute.public_ip_address}",
-      "2. Navigate to installer: cd ${local.n8n_config.install_directory}",
-      "3. Review documentation: cat README.md",
-      "4. Run installer: sudo bash ${local.n8n_config.installer_script}",
+      "1. SSH to VM using: ssh -i ${module.ssh_keys.private_key_path} ${var.admin_username}@${module.compute.public_ip_address}",
+      "2. Navigate to installer directory: cd ${local.n8n_config.install_directory}",
+      "3. Review documentation with: cat README.md",
+      "4. Run installer with: sudo bash ${local.n8n_config.installer_script}",
+      "5. Access N8N at: http://${module.compute.public_ip_address}"
     ]
     
     important_notes = [
-      "SSH keys are stored in: ssh-keys/ directory",
-      "N8N repository cloned to: ${local.n8n_config.install_directory}",
-      "Access restricted to: ${var.enable_dynamic_ip_security ? "your current IP" : "configured CIDR blocks"}",
+      "SSH keys are stored in ssh-keys/ directory",
+      "N8N repository cloned to ${local.n8n_config.install_directory}",
+      "Access restricted to ${var.enable_dynamic_ip_security ? "your current IP" : "configured CIDR blocks"}",
+      "Default N8N port 5678 (proxied via port 80/443)"
     ]
   }
 }

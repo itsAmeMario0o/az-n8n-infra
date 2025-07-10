@@ -18,12 +18,5 @@ data "azurerm_platform_image" "ubuntu" {
   sku       = var.vm_config.source_image.sku
 }
 
-# -----------------------------------------------------------------------------
-# Available VM Sizes
-# -----------------------------------------------------------------------------
-# Get information about available VM sizes in the specified location to
-# validate that the requested VM size is available in the target region.
-
-data "azurerm_virtual_machine_sizes" "available" {
-  location = var.location
-}
+# Note: azurerm_virtual_machine_sizes data source does not exist in the Azure provider
+# VM size validation is handled through variable validation instead

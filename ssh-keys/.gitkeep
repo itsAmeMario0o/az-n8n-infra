@@ -1,0 +1,3 @@
+# SSH Keys Directory
+This directory contains generated SSH keys for the N8N deployment.
+Private keys are automatically excluded from git via .gitignore.

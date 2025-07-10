@@ -11,18 +11,19 @@ resource "azurerm_network_interface" "main" {
   resource_group_name = var.resource_group_name
   dns_servers         = local.nic_config.dns_servers
 
-  # IP configuration for the network interface
+  # IP configuration for the network interface (without public IP initially)
   ip_configuration {
     name                          = "internal"
     subnet_id                     = azurerm_subnet.main.id
     private_ip_address_allocation = local.nic_config.private_ip_address_allocation
-    public_ip_address_id          = var.public_ip_id
+    # Public IP will be associated separately to avoid circular dependency
   }
 
   # Apply common tags plus networking-specific tags
   tags = merge(var.common_tags, {
     Component   = "Networking"
     Type        = "Network Interface"
+    Description = "Network interface for N8N virtual machine"
     SubnetId    = azurerm_subnet.main.id
   })
 
@@ -30,6 +31,11 @@ resource "azurerm_network_interface" "main" {
   lifecycle {
     # Create replacement NIC before destroying the old one
     create_before_destroy = true
+    
+    # Ignore changes to public IP as it's managed separately
+    ignore_changes = [
+      ip_configuration[0].public_ip_address_id
+    ]
   }
 
   # Explicit dependencies to ensure proper creation order
