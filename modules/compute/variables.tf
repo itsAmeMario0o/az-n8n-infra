@@ -63,10 +63,9 @@ variable "ssh_public_key" {
   description = "SSH public key content for VM authentication"
   type        = string
   
-  validation {
-    condition     = can(regex("^ssh-(rsa|ed25519|ecdsa-sha2-nistp256|ecdsa-sha2-nistp384|ecdsa-sha2-nistp521) [A-Za-z0-9+/]+(=*)( .*)?$", var.ssh_public_key))
-    error_message = "SSH public key must be a valid SSH public key in OpenSSH format."
-  }
+  # Note: Validation removed because this value comes from a module output
+  # that is computed at apply time, and Terraform validates during plan phase
+  # The SSH keys module ensures the key is properly formatted
 }
 
 variable "network_interface_id" {

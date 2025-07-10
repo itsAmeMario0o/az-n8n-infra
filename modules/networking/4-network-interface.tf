@@ -12,11 +12,12 @@ resource "azurerm_network_interface" "main" {
   dns_servers         = local.nic_config.dns_servers
 
   # IP configuration for the network interface (without public IP initially)
+  # Public IP will be associated via Azure CLI after all modules are created
   ip_configuration {
     name                          = "internal"
     subnet_id                     = azurerm_subnet.main.id
     private_ip_address_allocation = local.nic_config.private_ip_address_allocation
-    # Public IP will be associated separately to avoid circular dependency
+    # public_ip_address_id is not set initially to avoid circular dependency
   }
 
   # Apply common tags plus networking-specific tags
@@ -32,7 +33,7 @@ resource "azurerm_network_interface" "main" {
     # Create replacement NIC before destroying the old one
     create_before_destroy = true
     
-    # Ignore changes to public IP as it's managed separately
+    # Ignore changes to public IP since it's managed via Azure CLI
     ignore_changes = [
       ip_configuration[0].public_ip_address_id
     ]

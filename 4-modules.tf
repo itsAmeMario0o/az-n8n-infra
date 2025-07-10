@@ -28,10 +28,10 @@ module "ssh_keys" {
 }
 
 # -----------------------------------------------------------------------------
-# Networking Module (without Public IP)
+# Networking Module
 # -----------------------------------------------------------------------------
 # Create the network infrastructure including VNet, subnet, and network interface.
-# The network interface is created without a public IP to avoid circular dependencies.
+# This module establishes the network foundation for the VM deployment.
 
 module "networking" {
   source = "./modules/networking"
@@ -116,26 +116,41 @@ module "security" {
 # -----------------------------------------------------------------------------
 # Public IP Association
 # -----------------------------------------------------------------------------
-# Associate the public IP with the network interface after all modules are created.
-# This uses a separate resource to avoid circular dependencies.
+# Associate the public IP with the network interface using a separate resource.
+# This avoids circular dependencies by using Azure CLI to update the NIC.
 
-resource "azurerm_network_interface" "public_ip_association" {
-  name                = module.networking.network_interface_name
-  location            = azurerm_resource_group.n8n.location
-  resource_group_name = azurerm_resource_group.n8n.name
-
-  ip_configuration {
-    name                          = "internal"
-    subnet_id                     = module.networking.subnet_id
-    private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = module.compute.public_ip_id
+resource "null_resource" "public_ip_association" {
+  # Use Azure CLI to associate the public IP with the network interface
+  provisioner "local-exec" {
+    command = <<-EOT
+      az network nic ip-config update \
+        --resource-group ${azurerm_resource_group.n8n.name} \
+        --nic-name ${module.networking.network_interface_name} \
+        --name internal \
+        --public-ip-address ${module.compute.public_ip_id}
+    EOT
   }
 
-  # This will update the existing NIC with the public IP
-  lifecycle {
-    create_before_destroy = true
+  # Clean up on destroy
+  provisioner "local-exec" {
+    when = destroy
+    command = <<-EOT
+      az network nic ip-config update \
+        --resource-group ${self.triggers.resource_group} \
+        --nic-name ${self.triggers.nic_name} \
+        --name internal \
+        --remove publicIpAddress || true
+    EOT
   }
 
+  # Store values for destroy-time provisioner
+  triggers = {
+    resource_group = azurerm_resource_group.n8n.name
+    nic_name       = module.networking.network_interface_name
+    public_ip_id   = module.compute.public_ip_id
+  }
+
+  # Ensure all modules are created before running this
   depends_on = [
     module.networking,
     module.compute,
